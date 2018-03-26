@@ -1,0 +1,33 @@
+---
+- name: make /data directory
+  file:
+    path: /data 
+    owner: ec2-user
+    group: ec2-user
+    state: directory
+    mode: 0755
+
+- name: get volume name
+  shell: file -s /dev/sdh | awk '{print $NF}'
+  register: volume_name
+
+- name: create filesystem if necessary
+  shell: 
+    cmd: |
+      if [[ -z $(file -s /dev/{{ volume_name.stdout }} | grep ext4) ]]; then
+        mkfs.ext4 /dev/{{ volume_name.stdout }}
+      fi
+  args:
+    executable: /bin/bash
+
+- name: mount the drive
+  shell:
+    cmd: |
+      if [ -z $(mount | grep {{ volume_name.stdout }}) ]; then
+        mount /dev/{{ volume_name.stdout }} /data
+      fi
+  args:
+    executable: /bin/bash
+
+
+
